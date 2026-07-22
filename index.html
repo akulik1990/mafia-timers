@@ -37,6 +37,8 @@
     grid-template-rows:auto 1fr auto;    /* top controls / timers / bottom controls */
     background:var(--bg);
   }
+  body.scaled{padding-top:0}
+  body.scaled #stage{width:100vw;height:100vh}
 
   /* gear / config menu */
   #gear{margin-left:auto;z-index:6;
@@ -64,6 +66,7 @@
   #voteWrap .bar{width:100%;height:7cqh;background:#3a1010;border-radius:1.4cqh;overflow:hidden}
   #voteWrap .fill{height:100%;width:0;background:var(--danger);transition:.08s linear}
   #voteCount{font-size:12cqh;font-weight:700;color:var(--ink)}
+  #voteMini{position:absolute;bottom:1cqh;right:1.5cqw;font-size:4.5cqh;font-weight:700;color:var(--danger);opacity:.16;display:none;z-index:2}
   #side.mode-vote .clk{display:none}
   #side.mode-vote #voteWrap{display:flex}
 
@@ -84,6 +87,8 @@
   .bcol>.ctl{width:100%}
   .cg{display:flex;align-items:center;gap:.8cqw}
   .cg .cl{font-size:3.2cqh;letter-spacing:.1em;color:var(--dim);text-transform:uppercase}
+  .f3lbl{display:flex;align-items:center;gap:.5cqw;font-size:3.2cqh;color:var(--dim);cursor:pointer;text-transform:uppercase}
+  .f3lbl input[type=checkbox]{width:auto;padding:0;background:transparent;border:0;accent-color:var(--accent);cursor:pointer}
   button.ctl,select,input{font:inherit;font-size:3.6cqh;color:var(--ink);
     background:#1c1c22;border:1px solid var(--line);border-radius:1.2cqh;
     padding:1.2cqh 1.6cqw;cursor:pointer;transition:.12s;white-space:nowrap}
@@ -126,12 +131,14 @@
     <div class="cg">
       <span class="cl">Day&nbsp;#</span>
       <input class="num" id="dayNum" type="number" min="1" value="1">
+      <label class="f3lbl"><input type="checkbox" id="f3toggle"> F3</label>
     </div>
     <div class="cg">
       <span class="cl">Formal</span>
       <select id="fLen"><option value="3:00">3 min</option><option value="4:00" selected>4 min</option></select>
     </div>
     <button id="gear" title="Settings">&#9881;</button>
+    <div id="voteMini" class="mono"></div>
   </div>
 
   <!-- MIDDLE: clocks + label -->
@@ -157,7 +164,7 @@
         <select id="fType"><option>Formal</option><option>EOD</option><option>GTD</option><option>RNG 1</option><option>RNG 2</option></select>
         <input class="name" id="fName" placeholder="on (name)">
       </div>
-      <button class="ctl" id="fToggle">Start</button>
+      <button class="ctl" id="fToggle">Start Formal</button>
     </div>
     <div class="bcol right">
       <button class="ctl" id="pauseBtn">Pause</button>
@@ -177,6 +184,10 @@
     <div class="fields">
     <div class="field"><label>Clock font</label><select id="setFont"><option value="digital7">Digital-7 (old app)</option><option value="dsegModern">DSEG7 Modern</option><option value="dsegClassic">DSEG7 Classic</option><option value="mono">Plain mono</option></select></div>
     <div class="field"><label>Default day length (min)</label><input id="setDay" type="number" min="1"></div>
+    <div class="field"><label>Day warn (sec left)</label><input id="setDayWarn" type="number"></div>
+    <div class="field"><label>Day danger (sec left)</label><input id="setDayDanger" type="number"></div>
+    <div class="field"><label>Layout</label><select id="setSize"><option value="fixed">Fixed size</option><option value="fill">Fill window (scalable)</option></select></div>
+    <div class="field"><label>F3 sets formal to 3 min</label><select id="setF3min"><option value="on">On</option><option value="off">Off</option></select></div>
     <div class="field"><label>Formal direction</label><select id="setDir"><option value="up">Count up</option><option value="down">Count down</option></select></div>
     <div class="field"><label>Vote window (sec)</label><input id="setVote" type="number" min="1"></div>
     <div class="field"><label>Formal warn (sec left)</label><input id="setWarn" type="number"></div>
@@ -190,11 +201,12 @@
 "use strict";
 const $ = id => document.getElementById(id);
 
-const DEF = {dayMin:18, formal:"4:00", vote:3, warn:60, danger:20, formalDir:"up", font:"mono"};
+const DEF = {dayMin:18, formal:"4:00", vote:3, warn:60, danger:20, formalDir:"up", font:"mono", dayWarn:120, dayDanger:30, size:"fixed", f3min:true};
 let cfg = Object.assign({}, DEF, JSON.parse(localStorage.getItem("mt_cfg")||"{}"));
 const saveCfg = () => localStorage.setItem("mt_cfg", JSON.stringify(cfg));
 const FONTS = {digital7:"'Digital7'", dsegModern:"'DSEG7Modern'", dsegClassic:"'DSEG7Classic'", mono:"ui-monospace"};
 const applyFont = () => document.documentElement.style.setProperty('--clockfont', FONTS[cfg.font]||FONTS.digital7);
+const applyScale = () => document.body.classList.toggle('scaled', cfg.size==='fill');
 
 const parseDur = str => {
   str = String(str).trim();
@@ -222,7 +234,7 @@ function startDay(){
 }
 function stopDay(){
   day.running=false; $("dayPanel").classList.remove("on");
-  $("dayClk").className="clk mono"; $("dayClk").textContent=fmt(cfg.dayMin*60); dayCtl();
+  $("dayClk").className="clk mono"; $("dayClk").textContent="00:00"; dayCtl();
   formal.running=false; ten.running=false; ten.done=false; vote.active=false; vote.ended=false;
   formalCtl(); $("voteBtn").textContent="Vote"; updateLabel(); setActionsEnabled();
 }
@@ -250,12 +262,13 @@ function stopFormal(){
 }
 function formalCtl(){
   const on=formal.running;
-  $("fToggle").textContent=on?"Stop":"Start"; $("fToggle").classList.toggle("on",on);
+  $("fToggle").textContent=on?"Stop Formal":"Start Formal"; $("fToggle").classList.toggle("on",on);
 }
 function esc(s){return String(s).replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'})[c]);}
 function updateLabel(){
   const min = Math.round(parseDur(cfg.formal)/60);
-  $("lblCtx").textContent = `D${$("dayNum").value||1} --- ${min} min formals`;
+  const prefix = $("f3toggle").checked ? "F3" : "D"+($("dayNum").value||1);
+  $("lblCtx").textContent = `${prefix} --- ${min} min formals`;
   if(formal.running){
     const t=$("fType").value, n=$("fName").value.trim();
     const typeLabel = t==="Formal"?"Formal":t+" Formal";
@@ -303,17 +316,21 @@ function tick(){
   if(day.running){
     const rem = paused?day.remain/1000:(day.endAt-t)/1000;
     const c=$("dayClk");
-    c.className="clk mono"+(rem<0?" negative":(rem<=60?" warn":""));
+    c.className="clk mono"+(rem<0?" negative":(rem<=cfg.dayDanger?" danger":(rem<=cfg.dayWarn?" warn":"")));
     c.textContent=fmt(rem);
   }
   // SIDE panel mode: vote > ten > formal
   const side=$("side"), lab=$("sideLab"), clk=$("sideClk");
+  $("voteMini").style.display="none";
   if(vote.active){
     side.className="panel side mode-vote"; lab.textContent = vote.ended?"TIME":"VOTE";
-    const el = (paused?vote.pausedElapsed:(t-vote.startAt))/1000; // keeps counting past cfg.vote
+    const el = (paused?vote.pausedElapsed:(t-vote.startAt))/1000;
+    const over = el>=cfg.vote;
     $("voteFill").style.width = Math.min(100, el/cfg.vote*100)+"%";
-    $("voteCount").textContent = el.toFixed(3);
-    if(el>=cfg.vote && !vote.ended) vote.ended=true;
+    $("voteFill").style.background = over ? "var(--danger)" : "var(--accent)"; // blue -> red at the window
+    $("voteCount").textContent = Math.min(el,cfg.vote).toFixed(3);            // main freezes at 3.000
+    if(over){ $("voteMini").style.display="block"; $("voteMini").textContent=Math.min(el,5).toFixed(3); } // 3->5s, faint
+    if(over && !vote.ended) vote.ended=true;
   } else if(ten.running || ten.done){
     side.className="panel side mode-ten"; lab.textContent="10 SEC";
     if(ten.running){
@@ -344,14 +361,16 @@ function tick(){
 function openSettings(){
   $("setDay").value=cfg.dayMin; $("setVote").value=cfg.vote;
   $("setWarn").value=cfg.warn; $("setDanger").value=cfg.danger; $("setDir").value=cfg.formalDir;
-  $("setFont").value=cfg.font; $("settings").classList.add("show");
+  $("setFont").value=cfg.font; $("setDayWarn").value=cfg.dayWarn; $("setDayDanger").value=cfg.dayDanger; $("setSize").value=cfg.size; $("setF3min").value=cfg.f3min?"on":"off";
+  $("settings").classList.add("show");
 }
 function saveSettings(){
   cfg.dayMin=+$("setDay").value||18;
   cfg.vote=+$("setVote").value||3; cfg.warn=+$("setWarn").value||60; cfg.danger=+$("setDanger").value||20;
   cfg.formalDir=$("setDir").value; cfg.font=$("setFont").value;
-  saveCfg(); applyFont(); $("dayMin").value=cfg.dayMin;
-  if(!day.running) $("dayClk").textContent=fmt(cfg.dayMin*60);
+  cfg.dayWarn=+$("setDayWarn").value||120; cfg.dayDanger=+$("setDayDanger").value||30; cfg.size=$("setSize").value; cfg.f3min=$("setF3min").value==="on";
+  saveCfg(); applyFont(); applyScale(); $("dayMin").value=cfg.dayMin;
+  if(!day.running) $("dayClk").textContent="00:00";
   updateLabel();
   $("settings").classList.remove("show");
 }
@@ -360,8 +379,15 @@ function saveSettings(){
 $("dayToggle").onclick=toggleDay; $("fToggle").onclick=toggleFormal;
 $("fType").onchange=updateLabel;
 $("fName").oninput=updateLabel;
-$("fLen").onchange=()=>{ cfg.formal=$("fLen").value; saveCfg(); updateLabel(); };
+$("fLen").onchange=()=>{ cfg.formal=$("fLen").value; saveCfg(); if(formal.running) formal.total=parseDur(cfg.formal); updateLabel(); };
 $("dayNum").oninput=updateLabel;
+$("f3toggle").onchange=()=>{
+  if(cfg.f3min){
+    cfg.formal=$("f3toggle").checked?"3:00":"4:00"; $("fLen").value=cfg.formal; saveCfg();
+    if(formal.running) formal.total=parseDur(cfg.formal);
+  }
+  updateLabel();
+};
 $("pauseBtn").onclick=togglePause; $("tenBtn").onclick=startTen; $("voteBtn").onclick=toggleVote;
 $("gear").onclick=openSettings; $("setSave").onclick=saveSettings;
 $("setCancel").onclick=()=>$("settings").classList.remove("show");
@@ -370,9 +396,9 @@ document.addEventListener("keydown",e=>{
   if(e.code==="Space"){ e.preventDefault(); togglePause(); }
 });
 
-$("dayMin").value=cfg.dayMin; $("dayClk").textContent=fmt(cfg.dayMin*60); applyFont();
+$("dayMin").value=cfg.dayMin; $("dayClk").textContent="00:00"; applyFont();
 $("fLen").value=cfg.formal; updateLabel();
-dayCtl(); formalCtl(); setActionsEnabled(); tick();
+applyScale(); dayCtl(); formalCtl(); setActionsEnabled(); tick();
 </script>
 </body>
 </html>
