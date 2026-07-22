@@ -107,6 +107,10 @@
   #settings .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;
     padding:16px 20px;width:540px;max-width:94vw;text-align:left}
   #settings h2{font-size:18px;margin-bottom:12px}
+  #settings .tabs{display:flex;gap:6px;margin-bottom:14px;border-bottom:1px solid var(--line)}
+  #settings .tab{background:none;border:none;border-radius:0;color:var(--dim);padding:6px 14px;cursor:pointer;font-size:14px;border-bottom:2px solid transparent}
+  #settings .tab.active{color:var(--ink);border-bottom-color:var(--accent)}
+  #settings .tabpane[hidden]{display:none}
   #settings .fields{display:grid;grid-template-columns:1fr 1fr;gap:10px 22px}
   #settings .field{display:flex;flex-direction:column;align-items:stretch;gap:4px}
   #settings .field label{color:var(--dim);font-size:12.5px}
@@ -128,6 +132,7 @@
       <input class="num" id="dayMin" type="number" min="1" value="18">
       <button class="ctl" id="dayToggle">Start</button>
     </div>
+    <button class="ctl" id="gtdBtn">GTD</button>
     <div class="cg">
       <span class="cl">Day&nbsp;#</span>
       <input class="num" id="dayNum" type="number" min="1" value="1">
@@ -181,17 +186,28 @@
 <div id="settings">
   <div class="card">
     <h2>Settings</h2>
-    <div class="fields">
-    <div class="field"><label>Clock font</label><select id="setFont"><option value="digital7">Digital-7 (old app)</option><option value="dsegModern">DSEG7 Modern</option><option value="dsegClassic">DSEG7 Classic</option><option value="mono">Plain mono</option></select></div>
-    <div class="field"><label>Default day length (min)</label><input id="setDay" type="number" min="1"></div>
-    <div class="field"><label>Day warn (sec left)</label><input id="setDayWarn" type="number"></div>
-    <div class="field"><label>Day danger (sec left)</label><input id="setDayDanger" type="number"></div>
-    <div class="field"><label>Layout</label><select id="setSize"><option value="fixed">Fixed size</option><option value="fill">Fill window (scalable)</option></select></div>
-    <div class="field"><label>F3 sets formal to 3 min</label><select id="setF3min"><option value="on">On</option><option value="off">Off</option></select></div>
-    <div class="field"><label>Formal direction</label><select id="setDir"><option value="up">Count up</option><option value="down">Count down</option></select></div>
-    <div class="field"><label>Vote window (sec)</label><input id="setVote" type="number" min="1"></div>
-    <div class="field"><label>Formal warn (sec left)</label><input id="setWarn" type="number"></div>
-    <div class="field"><label>Formal danger (sec left)</label><input id="setDanger" type="number"></div>
+    <div class="tabs">
+      <button class="tab active" data-tab="timers">Timers</button>
+      <button class="tab" data-tab="visual">Visual</button>
+    </div>
+    <div class="tabpane" id="tab-timers">
+      <div class="fields">
+      <div class="field"><label>Default day length (min)</label><input id="setDay" type="number" min="1"></div>
+      <div class="field"><label>GTD length (min)</label><input id="setGtd" type="number" min="1"></div>
+      <div class="field"><label>Day warn (sec left)</label><input id="setDayWarn" type="number"></div>
+      <div class="field"><label>Day danger (sec left)</label><input id="setDayDanger" type="number"></div>
+      <div class="field"><label>Vote window (sec)</label><input id="setVote" type="number" min="1"></div>
+      <div class="field"><label>Formal direction</label><select id="setDir"><option value="up">Count up</option><option value="down">Count down</option></select></div>
+      <div class="field"><label>Formal warn (sec left)</label><input id="setWarn" type="number"></div>
+      <div class="field"><label>Formal danger (sec left)</label><input id="setDanger" type="number"></div>
+      <div class="field"><label>F3 sets formal to 3 min</label><select id="setF3min"><option value="on">On</option><option value="off">Off</option></select></div>
+      </div>
+    </div>
+    <div class="tabpane" id="tab-visual" hidden>
+      <div class="fields">
+      <div class="field"><label>Clock font</label><select id="setFont"><option value="digital7">Digital-7 (old app)</option><option value="dsegModern">DSEG7 Modern</option><option value="dsegClassic">DSEG7 Classic</option><option value="mono">Plain mono</option></select></div>
+      <div class="field"><label>Layout</label><select id="setSize"><option value="fixed">Fixed size</option><option value="fill">Fill window (scalable)</option></select></div>
+      </div>
     </div>
     <div class="actions"><button class="ctl" id="setCancel">Close</button><button class="ctl" id="setSave">Save</button></div>
   </div>
@@ -201,7 +217,7 @@
 "use strict";
 const $ = id => document.getElementById(id);
 
-const DEF = {dayMin:18, formal:"4:00", vote:3, warn:60, danger:20, formalDir:"up", font:"mono", dayWarn:120, dayDanger:30, size:"fixed", f3min:true};
+const DEF = {dayMin:18, formal:"4:00", vote:3, warn:60, danger:20, formalDir:"up", font:"mono", dayWarn:120, dayDanger:30, size:"fixed", f3min:true, gtdMin:2};
 let cfg = Object.assign({}, DEF, JSON.parse(localStorage.getItem("mt_cfg")||"{}"));
 const saveCfg = () => localStorage.setItem("mt_cfg", JSON.stringify(cfg));
 const FONTS = {digital7:"'Digital7'", dsegModern:"'DSEG7Modern'", dsegClassic:"'DSEG7Classic'", mono:"ui-monospace"};
@@ -243,6 +259,7 @@ function dayCtl(){
   $("dayMin").style.display=on?"none":""; $("dayMin").previousElementSibling.style.opacity=on?.4:1;
   $("dayToggle").textContent=on?"Stop":"Start"; $("dayToggle").classList.toggle("on",on);
 }
+function startGTD(){ $("dayMin").value=cfg.gtdMin; startDay(); $("dayMin").value=cfg.dayMin; } // 2-min GTD day
 function setActionsEnabled(){ // formal/actions only usable while a day is actively running
   const on = day.running && !paused;
   ["fType","fName","fToggle","tenBtn","voteBtn"].forEach(id=>$(id).disabled=!on);
@@ -361,14 +378,14 @@ function tick(){
 function openSettings(){
   $("setDay").value=cfg.dayMin; $("setVote").value=cfg.vote;
   $("setWarn").value=cfg.warn; $("setDanger").value=cfg.danger; $("setDir").value=cfg.formalDir;
-  $("setFont").value=cfg.font; $("setDayWarn").value=cfg.dayWarn; $("setDayDanger").value=cfg.dayDanger; $("setSize").value=cfg.size; $("setF3min").value=cfg.f3min?"on":"off";
+  $("setFont").value=cfg.font; $("setDayWarn").value=cfg.dayWarn; $("setDayDanger").value=cfg.dayDanger; $("setSize").value=cfg.size; $("setF3min").value=cfg.f3min?"on":"off"; $("setGtd").value=cfg.gtdMin;
   $("settings").classList.add("show");
 }
 function saveSettings(){
   cfg.dayMin=+$("setDay").value||18;
   cfg.vote=+$("setVote").value||3; cfg.warn=+$("setWarn").value||60; cfg.danger=+$("setDanger").value||20;
   cfg.formalDir=$("setDir").value; cfg.font=$("setFont").value;
-  cfg.dayWarn=+$("setDayWarn").value||120; cfg.dayDanger=+$("setDayDanger").value||30; cfg.size=$("setSize").value; cfg.f3min=$("setF3min").value==="on";
+  cfg.dayWarn=+$("setDayWarn").value||120; cfg.dayDanger=+$("setDayDanger").value||30; cfg.size=$("setSize").value; cfg.f3min=$("setF3min").value==="on"; cfg.gtdMin=+$("setGtd").value||2;
   saveCfg(); applyFont(); applyScale(); $("dayMin").value=cfg.dayMin;
   if(!day.running) $("dayClk").textContent="00:00";
   updateLabel();
@@ -391,6 +408,11 @@ $("f3toggle").onchange=()=>{
 $("pauseBtn").onclick=togglePause; $("tenBtn").onclick=startTen; $("voteBtn").onclick=toggleVote;
 $("gear").onclick=openSettings; $("setSave").onclick=saveSettings;
 $("setCancel").onclick=()=>$("settings").classList.remove("show");
+$("gtdBtn").onclick=startGTD;
+document.querySelectorAll('#settings .tab').forEach(tb=>tb.onclick=()=>{
+  document.querySelectorAll('#settings .tab').forEach(x=>x.classList.toggle('active',x===tb));
+  document.querySelectorAll('#settings .tabpane').forEach(p=>p.hidden=p.id!=='tab-'+tb.dataset.tab);
+});
 document.addEventListener("keydown",e=>{
   if(e.target.tagName==="INPUT"||e.target.tagName==="SELECT") return;
   if(e.code==="Space"){ e.preventDefault(); togglePause(); }
