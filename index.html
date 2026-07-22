@@ -235,7 +235,7 @@ const fmt = sec => {
 };
 const now = () => Date.now();
 
-let paused=false;
+let paused=false, gtdActive=false;
 const day    = {endAt:0, remain:0, running:false};
 const formal = {startAt:0, pausedElapsed:0, total:0, running:false}; // counts UP
 const ten    = {endAt:0, remain:0, running:false, done:false};
@@ -245,13 +245,13 @@ const vote   = {startAt:0, pausedElapsed:0, active:false, ended:false}; // count
 function toggleDay(){ day.running ? stopDay() : startDay(); }
 function startDay(){
   const total=(parseInt($("dayMin").value,10)||0)*60; if(total<=0) return;
-  day.endAt=now()+total*1000; day.running=true;
-  $("dayPanel").classList.add("on"); dayCtl(); setActionsEnabled();
+  day.endAt=now()+total*1000; day.running=true; gtdActive=false;
+  $("dayPanel").classList.add("on"); dayCtl(); setActionsEnabled(); updateLabel();
 }
 function stopDay(){
   day.running=false; $("dayPanel").classList.remove("on");
   $("dayClk").className="clk mono"; $("dayClk").textContent="00:00"; dayCtl();
-  formal.running=false; ten.running=false; ten.done=false; vote.active=false; vote.ended=false;
+  formal.running=false; ten.running=false; ten.done=false; vote.active=false; vote.ended=false; gtdActive=false;
   formalCtl(); $("voteBtn").textContent="Vote"; updateLabel(); setActionsEnabled();
 }
 function dayCtl(){
@@ -259,7 +259,7 @@ function dayCtl(){
   $("dayMin").style.display=on?"none":""; $("dayMin").previousElementSibling.style.opacity=on?.4:1;
   $("dayToggle").textContent=on?"Stop":"Start"; $("dayToggle").classList.toggle("on",on);
 }
-function startGTD(){ $("dayMin").value=cfg.gtdMin; startDay(); $("dayMin").value=cfg.dayMin; } // 2-min GTD day
+function startGTD(){ $("dayMin").value=cfg.gtdMin; startDay(); $("dayMin").value=cfg.dayMin; gtdActive=true; updateLabel(); } // 2-min GTD day
 function setActionsEnabled(){ // formal/actions only usable while a day is actively running
   const on = day.running && !paused;
   ["fType","fName","fToggle","tenBtn","voteBtn"].forEach(id=>$(id).disabled=!on);
@@ -268,7 +268,7 @@ function setActionsEnabled(){ // formal/actions only usable while a day is activ
 /* ---- FORMAL ---- */
 function toggleFormal(){ formal.running ? stopFormal() : startFormal(); }
 function startFormal(){
-  ten.running=false; ten.done=false; vote.active=false; vote.ended=false; $("voteBtn").textContent="Vote";
+  ten.running=false; ten.done=false; vote.active=false; vote.ended=false; gtdActive=false; $("voteBtn").textContent="Vote";
   formal.total=parseDur(cfg.formal);
   formal.startAt=now(); formal.running=true;
   formalCtl(); updateLabel();
@@ -286,10 +286,13 @@ function updateLabel(){
   const min = Math.round(parseDur(cfg.formal)/60);
   const prefix = $("f3toggle").checked ? "F3" : "D"+($("dayNum").value||1);
   $("lblCtx").textContent = `${prefix} --- ${min} min formals`;
+  const t=$("fType").value;
   if(formal.running){
-    const t=$("fType").value, n=$("fName").value.trim();
+    const n=$("fName").value.trim();
     const typeLabel = t==="Formal"?"Formal":t+" Formal";
     $("lblFormal").innerHTML = ` : <span class="type">${esc(typeLabel)}</span>${n?" on "+esc(n):""}`;
+  } else if(gtdActive){
+    $("lblFormal").innerHTML = ` : <span class="type">${esc(t)} Time</span>`;
   } else $("lblFormal").innerHTML = "";
 }
 
