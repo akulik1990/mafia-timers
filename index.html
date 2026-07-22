@@ -423,6 +423,8 @@ document.addEventListener("keydown",e=>{
 
 $("dayMin").value=cfg.dayMin; $("dayClk").textContent="00:00"; applyFont();
 $("fLen").value=cfg.formal; updateLabel();
+const _p=new URLSearchParams(location.search);   // ?fill for an OBS browser source (renders full-res, crisp)
+if(_p.has('fill')||_p.has('scale')) cfg.size='fill'; else if(_p.has('fixed')) cfg.size='fixed';
 applyScale(); dayCtl(); formalCtl(); setActionsEnabled(); tick();
 </script>
 </body>
