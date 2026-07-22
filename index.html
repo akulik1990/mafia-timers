@@ -100,16 +100,17 @@
     align-items:center;justify-content:center;z-index:20}
   #settings.show{display:flex}
   #settings .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;
-    padding:22px 26px;width:400px;max-width:92vw;text-align:left}
-  #settings h2{font-size:20px;margin-bottom:16px}
-  #settings .field{display:flex;justify-content:space-between;align-items:center;margin-bottom:13px;gap:16px}
-  #settings .field label{color:var(--dim);font-size:14px}
-  #settings input,#settings select,#settings button{font:inherit;font-size:14px;color:var(--ink);
-    background:#1b1b21;border:1px solid var(--line);border-radius:8px;padding:8px 10px;cursor:pointer}
-  #settings input,#settings select{width:150px}
+    padding:16px 20px;width:540px;max-width:94vw;text-align:left}
+  #settings h2{font-size:18px;margin-bottom:12px}
+  #settings .fields{display:grid;grid-template-columns:1fr 1fr;gap:10px 22px}
+  #settings .field{display:flex;flex-direction:column;align-items:stretch;gap:4px}
+  #settings .field label{color:var(--dim);font-size:12.5px}
+  #settings input,#settings select,#settings button{font:inherit;font-size:13px;color:var(--ink);
+    background:#1b1b21;border:1px solid var(--line);border-radius:7px;padding:6px 9px;cursor:pointer}
+  #settings input,#settings select{width:100%}
   #settings input{text-align:center}
-  #settings .actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}
-  #settings .actions button{background:#22222a;padding:9px 16px}
+  #settings .actions{display:flex;justify-content:flex-end;gap:10px;margin-top:14px}
+  #settings .actions button{background:#22222a;padding:8px 18px;width:auto}
   #settings .actions #setSave{background:var(--ok);border-color:#3a9a28}
 </style>
 </head>
@@ -173,12 +174,14 @@
 <div id="settings">
   <div class="card">
     <h2>Settings</h2>
+    <div class="fields">
     <div class="field"><label>Clock font</label><select id="setFont"><option value="digital7">Digital-7 (old app)</option><option value="dsegModern">DSEG7 Modern</option><option value="dsegClassic">DSEG7 Classic</option><option value="mono">Plain mono</option></select></div>
     <div class="field"><label>Default day length (min)</label><input id="setDay" type="number" min="1"></div>
     <div class="field"><label>Formal direction</label><select id="setDir"><option value="up">Count up</option><option value="down">Count down</option></select></div>
     <div class="field"><label>Vote window (sec)</label><input id="setVote" type="number" min="1"></div>
     <div class="field"><label>Formal warn (sec left)</label><input id="setWarn" type="number"></div>
     <div class="field"><label>Formal danger (sec left)</label><input id="setDanger" type="number"></div>
+    </div>
     <div class="actions"><button class="ctl" id="setCancel">Close</button><button class="ctl" id="setSave">Save</button></div>
   </div>
 </div>
