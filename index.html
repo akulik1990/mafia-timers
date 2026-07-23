@@ -11,7 +11,7 @@
   :root{
     --bg:#000; --panel:#131316; --ink:#f4f4f5; --dim:#8a8a92; --line:#2b2b31;
     --active:#1c3b12; --activeLine:#3f7d28; --activeInk:#cfe8bf;
-    --warn:#ffd23f; --danger:#ff4141; --paused:#17c8ad; --accent:#2f90d1;
+    --warn:#ffd23f; --orange:#ff8c00; --danger:#ff4141; --paused:#17c8ad; --accent:#2f90d1;
     --clockfont:ui-monospace;
   }
   *{margin:0;padding:0;box-sizing:border-box}
@@ -57,7 +57,7 @@
   .panel.on .lab{color:var(--activeInk)}
   .panel .clk{flex:1;display:flex;align-items:center;justify-content:center;
     font-family:var(--clockfont),ui-monospace,monospace;font-size:min(26cqh,11cqw);line-height:.85;font-weight:700}
-  .clk.warn{color:var(--warn)} .clk.danger,.clk.negative{color:var(--danger)}
+  .clk.warn{color:var(--warn)} .clk.danger{color:var(--orange)} .clk.negative{color:var(--danger)}
   body.paused .panel.on{background:#0c1c1a}
   body.paused .clk{color:var(--paused)!important}
 
@@ -236,7 +236,7 @@ const fmt = sec => {
 };
 const now = () => Date.now();
 
-let paused=false, gtdActive=false;
+let paused=false, gtdActive=false, heldFormal=null;
 const day    = {endAt:0, remain:0, running:false};
 const formal = {startAt:0, pausedElapsed:0, total:0, running:false}; // counts UP
 const ten    = {endAt:0, remain:0, running:false, done:false};
@@ -246,13 +246,13 @@ const vote   = {startAt:0, pausedElapsed:0, active:false, ended:false}; // count
 function toggleDay(){ day.running ? stopDay() : startDay(); }
 function startDay(){
   const total=(parseInt($("dayMin").value,10)||0)*60; if(total<=0) return;
-  day.endAt=now()+total*1000; day.running=true; gtdActive=false;
+  day.endAt=now()+total*1000; day.running=true; gtdActive=false; heldFormal=null;
   $("dayPanel").classList.add("on"); dayCtl(); setActionsEnabled(); updateLabel();
 }
 function stopDay(){
   day.running=false; $("dayPanel").classList.remove("on");
   $("dayClk").className="clk mono"; $("dayClk").textContent="00:00"; dayCtl();
-  formal.running=false; ten.running=false; ten.done=false; vote.active=false; vote.ended=false; gtdActive=false;
+  formal.running=false; ten.running=false; ten.done=false; vote.active=false; vote.ended=false; gtdActive=false; heldFormal=null;
   formalCtl(); $("voteBtn").textContent="Vote"; updateLabel(); setActionsEnabled();
 }
 function dayCtl(){
@@ -269,13 +269,13 @@ function setActionsEnabled(){ // formal/actions only usable while a day is activ
 /* ---- FORMAL ---- */
 function toggleFormal(){ formal.running ? stopFormal() : startFormal(); }
 function startFormal(){
-  ten.running=false; ten.done=false; vote.active=false; vote.ended=false; gtdActive=false; $("voteBtn").textContent="Vote";
+  ten.running=false; ten.done=false; vote.active=false; vote.ended=false; gtdActive=false; heldFormal=null; $("voteBtn").textContent="Vote";
   formal.total=parseDur(cfg.formal);
   formal.startAt=now(); formal.running=true;
   formalCtl(); updateLabel();
 }
 function stopFormal(){
-  formal.running=false; $("sideClk").className="clk mono"; $("sideClk").textContent="00:00";
+  formal.running=false; heldFormal=null; $("sideClk").className="clk mono"; $("sideClk").textContent="00:00";
   formalCtl(); updateLabel();
 }
 function formalCtl(){
@@ -288,10 +288,11 @@ function updateLabel(){
   const prefix = $("f3toggle").checked ? "F3" : "D"+($("dayNum").value||1);
   $("lblCtx").textContent = `${prefix} --- ${min} min formals`;
   const t=$("fType").value;
+  const fF=(type,name)=>{const tl=type==="Formal"?"Formal":type+" Formal";return ` : <span class="type">${esc(tl)}</span>${name?" on "+esc(name):""}`;};
   if(formal.running){
-    const n=$("fName").value.trim();
-    const typeLabel = t==="Formal"?"Formal":t+" Formal";
-    $("lblFormal").innerHTML = ` : <span class="type">${esc(typeLabel)}</span>${n?" on "+esc(n):""}`;
+    $("lblFormal").innerHTML = fF(t, $("fName").value.trim());
+  } else if(heldFormal){                              // 10s/vote keep showing who the formal was on
+    $("lblFormal").innerHTML = fF(heldFormal.type, heldFormal.name);
   } else if(gtdActive){
     $("lblFormal").innerHTML = ` : <span class="type">${esc(t)} Time</span>`;
   } else $("lblFormal").innerHTML = "";
@@ -300,7 +301,8 @@ function updateLabel(){
 /* ---- 10 SEC cooldown (shows in side panel) ---- */
 function startTen(){
   vote.active=false; vote.ended=false; $("voteBtn").textContent="Vote";
-  formal.running=false; formalCtl(); updateLabel();   // 10s ends the formal
+  if(formal.running) heldFormal={type:$("fType").value,name:$("fName").value.trim()};
+  formal.running=false; formalCtl(); updateLabel();   // 10s ends the formal but keeps who it was on
   ten.done=false; ten.endAt=now()+10*1000; ten.running=true;
 }
 
@@ -308,7 +310,8 @@ function startTen(){
 function toggleVote(){
   if(vote.active){ vote.active=false; vote.ended=false; $("voteFill").style.width="0"; $("voteBtn").textContent="Vote"; return; }
   ten.running=false; ten.done=false;
-  formal.running=false; formalCtl(); updateLabel();   // vote ends the formal
+  if(formal.running) heldFormal={type:$("fType").value,name:$("fName").value.trim()};
+  formal.running=false; formalCtl(); updateLabel();   // vote ends the formal but keeps who it was on
   vote.active=true; vote.ended=false; vote.startAt=now(); $("voteBtn").textContent="Reset";
 }
 
@@ -368,7 +371,7 @@ function tick(){
     if(formal.running){
       const el = paused?formal.pausedElapsed/1000:(t-formal.startAt)/1000;
       const remaining = formal.total - el;   // colour tracks time LEFT vs the limit
-      clk.className="clk mono"+(remaining<=cfg.danger?" danger":(remaining<=cfg.warn?" warn":""));
+      clk.className="clk mono"+(remaining<0?" negative":(remaining<=cfg.danger?" danger":(remaining<=cfg.warn?" warn":"")));
       clk.textContent = cfg.formalDir==="down" ? fmt(remaining) : fmt(el);
     } else {
       clk.className="clk mono"; clk.textContent="00:00"; // idle / after 10s or vote reset
