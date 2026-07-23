@@ -71,16 +71,17 @@
   #side.mode-vote #voteWrap{display:flex}
 
   /* ---- FORMAL LABEL ---- */
-  #label{display:flex;align-items:center;justify-content:center;min-height:8cqh;
-    font-size:4.6cqh;font-weight:700;padding:0 2cqw;white-space:nowrap;overflow:hidden}
+  #label{display:flex;align-items:center;justify-content:center;min-height:12cqh;
+    font-size:7cqh;font-weight:700;padding:0 2cqw;white-space:nowrap;overflow:hidden}
   #label #lblCtx{color:var(--dim)}
   #label .type{color:var(--accent)}
 
   /* ---- CONTROLS (subtle, compact) ---- */
-  #top{display:flex;align-items:center;gap:1.6cqw;padding:1.8cqh 2cqw}
+  #top{display:flex;align-items:center;gap:1.6cqw;padding:1.8cqh 2cqw;opacity:0;transition:opacity .18s}
   #mid{display:flex;flex-direction:column;min-height:0;gap:1cqh;padding:.4cqh 1.6cqw}
   #bottom{display:flex;align-items:stretch;gap:2.5cqw;
-    padding:1.4cqh 2cqw 1.9cqh;border-top:1px solid var(--line)}
+    padding:1.4cqh 2cqw 1.9cqh;border-top:1px solid var(--line);opacity:0;transition:opacity .18s}
+  #top:hover{opacity:1}  #bottom:hover{opacity:1}   /* hover a band to reveal only its controls */
   .bcol{flex:1;display:flex;flex-direction:column;gap:1.1cqh}
   .brow{display:flex;gap:1cqw}
   .brow>*{flex:1 1 0;min-width:0}
