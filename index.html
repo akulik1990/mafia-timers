@@ -96,6 +96,7 @@
   #bottom{display:flex;align-items:stretch;gap:2.5cqw;
     padding:1.4cqh 2cqw 1.9cqh;border-top:1px solid var(--line);opacity:0;transition:opacity .18s}
   #top:hover{opacity:1}  #bottom:hover{opacity:1}
+  body.nohide #top,body.nohide #bottom{opacity:1}
   .bcol{flex:1;display:flex;flex-direction:column;gap:1.1cqh}
   .brow{display:flex;gap:1cqw}
   .brow>*{flex:1 1 0;min-width:0}
@@ -221,6 +222,7 @@
       <div class="field"><label>Clock font</label><select id="setFont"><option value="digital7">Digital-7 (old app)</option><option value="dsegModern">DSEG7 Modern</option><option value="dsegClassic">DSEG7 Classic</option><option value="mono">Plain mono</option></select></div>
       <div class="field"><label>Layout</label><select id="setSize"><option value="fixed">Fixed size</option><option value="fill">Fill window (scalable)</option></select></div>
       <div class="field"><label>Style</label><select id="setStyle"><option value="classic">Classic</option><option value="minimal">Minimalist</option></select></div>
+      <div class="field"><label>Auto-hide top/bottom bars</label><select id="setHide"><option value="on">On</option><option value="off">Off</option></select></div>
       </div>
     </div>
     <div class="actions"><button class="ctl" id="setCancel">Close</button><button class="ctl" id="setSave">Save</button></div>
@@ -231,12 +233,13 @@
 "use strict";
 const $ = id => document.getElementById(id);
 
-const DEF = {dayMin:18, formal:"4:00", vote:3, warn:60, danger:20, formalDir:"up", font:"mono", dayWarn:120, dayDanger:30, size:"fixed", f3min:true, gtdMin:2, layout:"classic"};
+const DEF = {dayMin:18, formal:"4:00", vote:3, warn:60, danger:20, formalDir:"up", font:"mono", dayWarn:120, dayDanger:30, size:"fixed", f3min:true, gtdMin:2, layout:"classic", barHide:true};
 let cfg = Object.assign({}, DEF, JSON.parse(localStorage.getItem("mt_cfg")||"{}"));
 const saveCfg = () => localStorage.setItem("mt_cfg", JSON.stringify(cfg));
 const FONTS = {digital7:"'Digital7'", dsegModern:"'DSEG7Modern'", dsegClassic:"'DSEG7Classic'", mono:"ui-monospace"};
 const applyFont = () => document.documentElement.style.setProperty('--clockfont', FONTS[cfg.font]||FONTS.digital7);
 const applyScale = () => document.body.classList.toggle('scaled', cfg.size==='fill');
+const applyHide = () => document.body.classList.toggle('nohide', !cfg.barHide);
 
 const parseDur = str => {
   str = String(str).trim();
@@ -429,15 +432,15 @@ function tick(){
 function openSettings(){
   $("setDay").value=cfg.dayMin; $("setVote").value=cfg.vote;
   $("setWarn").value=cfg.warn; $("setDanger").value=cfg.danger; $("setDir").value=cfg.formalDir;
-  $("setFont").value=cfg.font; $("setDayWarn").value=cfg.dayWarn; $("setDayDanger").value=cfg.dayDanger; $("setSize").value=cfg.size; $("setF3min").value=cfg.f3min?"on":"off"; $("setGtd").value=cfg.gtdMin; $("setStyle").value=cfg.layout;
+  $("setFont").value=cfg.font; $("setDayWarn").value=cfg.dayWarn; $("setDayDanger").value=cfg.dayDanger; $("setSize").value=cfg.size; $("setF3min").value=cfg.f3min?"on":"off"; $("setGtd").value=cfg.gtdMin; $("setStyle").value=cfg.layout; $("setHide").value=cfg.barHide?"on":"off";
   $("settings").classList.add("show");
 }
 function saveSettings(){
   cfg.dayMin=+$("setDay").value||18;
   cfg.vote=+$("setVote").value||3; cfg.warn=+$("setWarn").value||60; cfg.danger=+$("setDanger").value||20;
   cfg.formalDir=$("setDir").value; cfg.font=$("setFont").value;
-  cfg.dayWarn=+$("setDayWarn").value||120; cfg.dayDanger=+$("setDayDanger").value||30; cfg.size=$("setSize").value; cfg.f3min=$("setF3min").value==="on"; cfg.gtdMin=+$("setGtd").value||2; cfg.layout=$("setStyle").value;
-  saveCfg(); applyFont(); applyScale(); applyLayout(); $("dayMin").value=cfg.dayMin;
+  cfg.dayWarn=+$("setDayWarn").value||120; cfg.dayDanger=+$("setDayDanger").value||30; cfg.size=$("setSize").value; cfg.f3min=$("setF3min").value==="on"; cfg.gtdMin=+$("setGtd").value||2; cfg.layout=$("setStyle").value; cfg.barHide=$("setHide").value==="on";
+  saveCfg(); applyFont(); applyScale(); applyLayout(); applyHide(); $("dayMin").value=cfg.dayMin;
   if(!day.running) $("dayClk").textContent="00:00";
   updateLabel();
   $("settings").classList.remove("show");
@@ -473,7 +476,7 @@ $("dayMin").value=cfg.dayMin; $("dayClk").textContent="00:00"; applyFont();
 $("fLen").value=cfg.formal; updateLabel();
 const _p=new URLSearchParams(location.search);
 if(_p.has('fill')||_p.has('scale')) cfg.size='fill'; else if(_p.has('fixed')) cfg.size='fixed';
-applyScale(); applyLayout(); dayCtl(); formalCtl(); tvCtl(); setActionsEnabled(); tick();
+applyScale(); applyLayout(); applyHide(); dayCtl(); formalCtl(); tvCtl(); setActionsEnabled(); tick();
 </script>
 </body>
 </html>
