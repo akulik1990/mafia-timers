@@ -24,45 +24,45 @@
 
   #stage{
     position:relative;
+    flex:none;
     width:560px;
     height:265px;
-    container-type:size;
     display:grid;
     grid-template-rows:auto 1fr auto;
     background:var(--bg);
   }
-  body.scaled{padding-top:0}
-  body.scaled #stage{width:100vw;height:100vh}
+  body.scaled{padding:0;display:block}
+  body.scaled #stage{transform-origin:0 0}
 
   #gear{z-index:6;
-    background:transparent;border:none;color:var(--dim);font-size:4.6cqh;cursor:pointer;
-    line-height:1;padding:.5cqh}
+    background:transparent;border:none;color:var(--dim);font-size:12.2px;cursor:pointer;
+    line-height:1;padding:1.3px}
   #gear:hover{color:var(--ink)}
 
   #clocks{flex:1;display:grid;grid-template-columns:1fr 1fr;min-height:0;
-    border:.5cqh solid var(--line);border-radius:2cqh;overflow:hidden;background:var(--panel)}
+    border:1.3px solid var(--line);border-radius:5.3px;overflow:hidden;background:var(--panel)}
   .panel{position:relative;display:flex;flex-direction:column;align-items:center;
     justify-content:flex-start;transition:background .2s}
-  .panel.day{border-right:.5cqh solid var(--line)}
+  .panel.day{border-right:1.3px solid var(--line)}
   .panel.on{background:var(--active)}
-  .panel .lab{font-size:5.5cqh;font-weight:700;letter-spacing:.18em;color:var(--dim);margin-top:3cqh}
+  .panel .lab{font-size:14.6px;font-weight:700;letter-spacing:.18em;color:var(--dim);margin-top:7.9px}
   .panel.on .lab{color:var(--activeInk)}
   .panel .clk{flex:1;display:flex;align-items:center;justify-content:center;
-    font-family:var(--clockfont),ui-monospace,monospace;font-size:min(26cqh,11cqw);line-height:.85;font-weight:700}
+    font-family:var(--clockfont),ui-monospace,monospace;font-size:61.6px;line-height:.85;font-weight:700}
   .clk.warn{color:var(--warn)} .clk.danger{color:var(--orange)} .clk.negative{color:var(--danger)}
   body.paused .panel.on{background:#0c1c1a}
   body.paused .clk{color:var(--paused)!important}
 
-  #voteWrap{display:none;flex:1;flex-direction:column;align-items:center;justify-content:center;gap:2.5cqh;width:82%}
-  #voteWrap .bar{width:100%;height:7cqh;background:#3a1010;border-radius:1.4cqh;overflow:hidden}
+  #voteWrap{display:none;flex:1;flex-direction:column;align-items:center;justify-content:center;gap:6.6px;width:82%}
+  #voteWrap .bar{width:100%;height:18.6px;background:#3a1010;border-radius:3.7px;overflow:hidden}
   #voteWrap .fill{height:100%;width:0;background:var(--danger);transition:.08s linear}
-  #voteCount{font-size:12cqh;font-weight:700;color:var(--ink)}
-  #voteMini{position:absolute;bottom:1cqh;right:1.5cqw;font-size:4.5cqh;font-weight:700;color:var(--danger);opacity:.16;display:none;z-index:2}
+  #voteCount{font-size:31.8px;font-weight:700;color:var(--ink)}
+  #voteMini{position:absolute;bottom:2.6px;right:8.4px;font-size:11.9px;font-weight:700;color:var(--danger);opacity:.16;display:none;z-index:2}
   #side.mode-vote .clk{display:none}
   #side.mode-vote #voteWrap{display:flex}
 
-  #label{display:flex;align-items:center;justify-content:center;min-height:12cqh;
-    font-size:7cqh;font-weight:700;padding:0 2cqw;white-space:nowrap;overflow:hidden}
+  #label{display:flex;align-items:center;justify-content:center;min-height:31.8px;
+    font-size:18.6px;font-weight:700;padding:0 11.2px;white-space:nowrap;overflow:hidden}
   #label #lblCtx{color:var(--dim)}
   #label .type{color:var(--accent)}
 
@@ -72,10 +72,10 @@
   body:not(.minimal) #gear{margin-left:auto}
   body.minimal #slotPauseTop{margin-left:auto}
   .slot{display:inline-flex}
-  #label .mingroup{display:inline-flex;align-items:center}
+  body.minimal #label .mingroup{display:inline-flex;align-items:center}
   #label .ctx{color:var(--dim)}
   #label input,#label select{font:inherit;color:var(--ink);background:transparent;
-    border:1px solid transparent;border-radius:1cqh;padding:0 .4cqw;width:auto;
+    border:1px solid transparent;border-radius:2.6px;padding:0 2.2px;width:auto;
     appearance:none;-webkit-appearance:none;cursor:pointer;transition:.12s}
   #label:hover input,#label:hover select{border-color:var(--line);background:#1c1c22}
   #label input:focus,#label select:focus{outline:none;border-color:var(--accent);background:#1c1c22}
@@ -84,37 +84,37 @@
   #label select#fType{color:var(--accent)}
   #label input#dayNum{width:2.4ch;text-align:center;cursor:text;color:var(--dim);-moz-appearance:textfield}
   #label #dayNum::-webkit-outer-spin-button,#label #dayNum::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
-  #label input#fName{width:26cqw;cursor:text}
+  #label input#fName{width:145.6px;cursor:text}
   #label #fName::placeholder{color:transparent}
   #label:hover #fName::placeholder{color:var(--dim)}
   #bottom>.ctl{flex:1 1 0;min-width:0}
   #slotPauseC{display:flex}
   #slotPauseC>.ctl{flex:1}
 
-  #top{display:flex;align-items:center;gap:1.6cqw;padding:1.8cqh 2cqw;opacity:0;transition:opacity .18s}
-  #mid{display:flex;flex-direction:column;min-height:0;gap:1cqh;padding:.4cqh 1.6cqw}
-  #bottom{display:flex;align-items:stretch;gap:2.5cqw;
-    padding:1.4cqh 2cqw 1.9cqh;border-top:1px solid var(--line);opacity:0;transition:opacity .18s}
+  #top{display:flex;align-items:center;gap:9px;padding:4.8px 11.2px;opacity:0;transition:opacity .18s}
+  #mid{display:flex;flex-direction:column;min-height:0;gap:2.6px;padding:1.1px 9px}
+  #bottom{display:flex;align-items:stretch;gap:14px;
+    padding:3.7px 11.2px 5px;border-top:1px solid var(--line);opacity:0;transition:opacity .18s}
   #top:hover{opacity:1}  #bottom:hover{opacity:1}
   body.nohide #top,body.nohide #bottom{opacity:1}
-  .bcol{flex:1;display:flex;flex-direction:column;gap:1.1cqh}
-  .brow{display:flex;gap:1cqw}
+  .bcol{flex:1;display:flex;flex-direction:column;gap:2.9px}
+  .brow{display:flex;gap:5.6px}
   .brow>*{flex:1 1 0;min-width:0}
   .bcol>.ctl{width:100%}
-  .cg{display:flex;align-items:center;gap:.8cqw}
-  .cg .cl{font-size:3.2cqh;letter-spacing:.1em;color:var(--dim);text-transform:uppercase}
-  .f3lbl{display:flex;align-items:center;gap:.5cqw;font-size:3.2cqh;color:var(--dim);cursor:pointer;text-transform:uppercase}
+  .cg{display:flex;align-items:center;gap:4.5px}
+  .cg .cl{font-size:8.5px;letter-spacing:.1em;color:var(--dim);text-transform:uppercase}
+  .f3lbl{display:flex;align-items:center;gap:2.8px;font-size:8.5px;color:var(--dim);cursor:pointer;text-transform:uppercase}
   .f3lbl input[type=checkbox]{width:auto;padding:0;background:transparent;border:0;accent-color:var(--accent);cursor:pointer}
-  button.ctl,select,input{font:inherit;font-size:3.6cqh;color:var(--ink);
-    background:#1c1c22;border:1px solid var(--line);border-radius:1.2cqh;
-    padding:1.2cqh 1.6cqw;cursor:pointer;transition:.12s;white-space:nowrap}
+  button.ctl,select,input{font:inherit;font-size:9.5px;color:var(--ink);
+    background:#1c1c22;border:1px solid var(--line);border-radius:3.2px;
+    padding:3.2px 9px;cursor:pointer;transition:.12s;white-space:nowrap}
   button.ctl:hover{background:#26262e;border-color:#3a3a44}
   button.ctl:active{transform:translateY(1px)}
   button.ctl.on{background:#2a2320;border-color:#5a4a3a;color:#ffd9b0}
   .ctl:disabled,#controls select:disabled,#controls input:disabled{opacity:.35;cursor:not-allowed}
   input{cursor:text}
-  input.num{width:12cqw;text-align:center} input.name{width:24cqw}
-  input.dur{width:14cqw;text-align:center}
+  input.num{width:67.2px;text-align:center} input.name{width:134.4px}
+  input.dur{width:78.4px;text-align:center}
 
   #settings{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;
     align-items:center;justify-content:center;z-index:20}
@@ -238,7 +238,14 @@ let cfg = Object.assign({}, DEF, JSON.parse(localStorage.getItem("mt_cfg")||"{}"
 const saveCfg = () => localStorage.setItem("mt_cfg", JSON.stringify(cfg));
 const FONTS = {digital7:"'Digital7'", dsegModern:"'DSEG7Modern'", dsegClassic:"'DSEG7Classic'", mono:"ui-monospace"};
 const applyFont = () => document.documentElement.style.setProperty('--clockfont', FONTS[cfg.font]||FONTS.digital7);
-const applyScale = () => document.body.classList.toggle('scaled', cfg.size==='fill');
+function fitStage(){
+  const st=$("stage");
+  if(cfg.size!=='fill'){ st.style.transform=""; return; }
+  const s=Math.min(innerWidth/560, innerHeight/265);
+  st.style.transform=`translate(${(innerWidth-560*s)/2}px,${(innerHeight-265*s)/2}px) scale(${s})`;
+}
+window.onresize=fitStage;
+const applyScale = () => { document.body.classList.toggle('scaled', cfg.size==='fill'); fitStage(); };
 const applyHide = () => document.body.classList.toggle('nohide', !cfg.barHide);
 
 const parseDur = str => {
