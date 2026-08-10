@@ -149,6 +149,16 @@
   #wheelRepRow{display:flex;align-items:center;gap:10px;margin-top:8px}
   #wheelRepRow input{flex:1;padding:0;background:transparent;border:0;accent-color:var(--accent);cursor:pointer}
   #wheelRepVal{color:var(--dim);font-size:13px;min-width:24px}
+  #wheelModeLbl{float:right;display:inline-flex;align-items:center;gap:5px;
+    font-size:12.5px;font-weight:400;color:var(--dim);cursor:pointer}
+  #wheelModeLbl input{accent-color:var(--accent);cursor:pointer}
+  #wheelInstant{display:none;width:260px;height:260px;flex:none;align-items:center;justify-content:center}
+  #instRoll{width:90px;height:90px;border-radius:50%;border:2px solid var(--line);
+    background:#1c1c22;color:var(--ink);font:inherit;font-size:16px;cursor:pointer}
+  #instRoll:hover{background:#26262e}
+  #wheel.instant #wheelWrap,#wheel.instant #wheelRepRow{display:none}
+  #wheel.instant #wheelInstant{display:flex}
+  #wheel.instant #wheelResult{font-size:26px}
   #settings .actions #setSave{background:var(--ok);border-color:#3a9a28}
 </style>
 </head>
@@ -246,13 +256,14 @@
 
 <div id="wheel">
   <div class="card">
-    <h2>Wheel</h2>
+    <h2>Wheel <label id="wheelModeLbl"><input type="checkbox" id="wheelMode"> instant result</label></h2>
     <div style="display:flex;gap:16px">
       <div id="wheelWrap">
         <div id="wheelPtr"></div>
         <canvas id="wheelCv" width="260" height="260"></canvas>
         <button id="wheelRoll">Roll</button>
       </div>
+      <div id="wheelInstant"><button id="instRoll">Roll</button></div>
       <textarea id="wheelItems" placeholder="one option per line"></textarea>
     </div>
     <div id="wheelResult"></div>
@@ -547,6 +558,15 @@ $("wheelBtn").onclick=()=>{ $("wheel").classList.add("show"); buildSegs(); drawW
 $("wheelClose").onclick=()=>$("wheel").classList.remove("show");
 $("wheelRoll").onclick=rollWheel;
 $("wheelItems").oninput=()=>{ localStorage.setItem("mt_wheel",$("wheelItems").value); buildSegs(); drawWheel(); };
+$("wheelMode").onchange=()=>{
+  $("wheel").classList.toggle("instant",$("wheelMode").checked);
+  localStorage.setItem("mt_wheelmode",$("wheelMode").checked?"1":"");
+  $("wheelResult").textContent="";
+};
+$("instRoll").onclick=()=>{
+  const items=wheelList();
+  if(items.length) $("wheelResult").textContent=items[Math.floor(Math.random()*items.length)];
+};
 $("wheelRep").oninput=()=>{
   $("wheelRepVal").textContent=$("wheelRep").value+"×";
   localStorage.setItem("mt_wheelrep",$("wheelRep").value);
@@ -555,6 +575,8 @@ $("wheelRep").oninput=()=>{
 $("wheelItems").value=localStorage.getItem("mt_wheel")||"";
 $("wheelRep").value=localStorage.getItem("mt_wheelrep")||1;
 $("wheelRepVal").textContent=$("wheelRep").value+"×";
+$("wheelMode").checked=!!localStorage.getItem("mt_wheelmode");
+$("wheel").classList.toggle("instant",$("wheelMode").checked);
 $("gtdBtn").onclick=startGTD;
 document.querySelectorAll('#settings .tab').forEach(tb=>tb.onclick=()=>{
   document.querySelectorAll('#settings .tab').forEach(x=>x.classList.toggle('active',x===tb));
