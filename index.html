@@ -137,7 +137,7 @@
   #settings .actions button,#wheel .actions button{background:#22222a;padding:8px 18px;width:auto;
     font:inherit;font-size:13px;color:var(--ink);border:1px solid var(--line);border-radius:7px;cursor:pointer}
   #wheelWrap{position:relative;width:260px;height:260px;flex:none}
-  #wheelCv{transition:transform 4s cubic-bezier(.12,.7,.15,1)}
+  #wheelCv{transition:transform 7.5s cubic-bezier(.1,.55,.06,.995)}
   #wheelPtr{position:absolute;top:-4px;left:50%;transform:translateX(-50%);width:0;height:0;
     border-left:9px solid transparent;border-right:9px solid transparent;border-top:14px solid var(--danger);z-index:2}
   #wheelRoll{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:64px;height:64px;
@@ -487,7 +487,7 @@ function rollWheel(){
   spinning=true; $("wheelResult").textContent="";
   const seg=360/items.length, w=Math.floor(Math.random()*items.length);
   const target=-(w*seg+seg/2)+(Math.random()-.5)*seg*.7;
-  wheelRot+=4*360+((target-wheelRot)%360+360)%360;
+  wheelRot+=(6+Math.floor(Math.random()*3))*360+((target-wheelRot)%360+360)%360;
   const cv=$("wheelCv");
   cv.style.transform=`rotate(${wheelRot}deg)`;
   cv.addEventListener("transitionend",()=>{
