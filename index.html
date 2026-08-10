@@ -337,11 +337,11 @@ function stopFormal(){
 function formalCtl(){
   const on=formal.running;
   $("fToggle").textContent=on?"Stop Formal":"Start Formal"; $("fToggle").classList.toggle("on",on);
-  $("fCycle").textContent = !on ? "Accusation" : (fStage===1 ? "Formal" : "Stop");
+  $("fCycle").textContent = !on ? ($("f3toggle").checked ? "Formal" : "Accusation") : (fStage===1 ? "Formal" : "Stop");
   $("fCycle").classList.toggle("on",on);
 }
-function fCycle(){ // Accusation -> Formal -> Stop
-  if(!formal.running){ startFormal(); fStage=1; }
+function fCycle(){ // Accusation -> Formal -> Stop (F3 skips accusation)
+  if(!formal.running){ startFormal(); fStage=$("f3toggle").checked?2:1; }
   else if(fStage===1){ startFormal(); fStage=2; }
   else { stopFormal(); return; }
   formalCtl();
@@ -537,7 +537,7 @@ $("f3toggle").onchange=()=>{
     cfg.formal=$("f3toggle").checked?"3:00":"4:00"; $("fLen").value=cfg.formal; saveCfg();
     if(formal.running) formal.total=parseDur(cfg.formal);
   }
-  updateLabel();
+  formalCtl(); updateLabel();
 };
 $("pauseBtn").onclick=togglePause; $("tenBtn").onclick=startTen; $("voteBtn").onclick=toggleVote;
 $("fCycle").onclick=fCycle; $("tvBtn").onclick=tvClick;
