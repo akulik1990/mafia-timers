@@ -485,11 +485,11 @@ function drawWheel(){
   const n=segs.length, ctx=$("wheelCv").getContext("2d");
   ctx.clearRect(0,0,260,260);
   if(!n) return;
-  const seg=2*Math.PI/n, small=n>24;
+  const seg=2*Math.PI/n, small=n>24, base=wheelList();
   segs.forEach((it,i)=>{
     const a0=i*seg-Math.PI/2;
     ctx.beginPath(); ctx.moveTo(130,130); ctx.arc(130,130,128,a0,a0+seg); ctx.closePath();
-    ctx.fillStyle=`hsl(${Math.round(i*360/n)},45%,32%)`; ctx.fill();
+    ctx.fillStyle=`hsl(${Math.round(base.indexOf(it)*360/base.length)},45%,32%)`; ctx.fill();
     ctx.strokeStyle="#000"; ctx.stroke();
     ctx.save(); ctx.translate(130,130); ctx.rotate(a0+seg/2);
     ctx.fillStyle="#eee"; ctx.font=(small?"9px":"12px")+" sans-serif"; ctx.textAlign="right";
