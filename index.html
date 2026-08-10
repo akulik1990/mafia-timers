@@ -146,6 +146,9 @@
   #wheelItems{flex:1;height:260px;background:#1b1b21;border:1px solid var(--line);border-radius:7px;
     color:var(--ink);font:inherit;font-size:13px;padding:6px 9px;resize:none}
   #wheelResult{margin-top:10px;font-size:16px;font-weight:700;min-height:20px;text-align:center}
+  #wheelRepRow{display:flex;align-items:center;gap:10px;margin-top:8px}
+  #wheelRepRow input{flex:1;padding:0;background:transparent;border:0;accent-color:var(--accent);cursor:pointer}
+  #wheelRepVal{color:var(--dim);font-size:13px;min-width:24px}
   #settings .actions #setSave{background:var(--ok);border-color:#3a9a28}
 </style>
 </head>
@@ -253,6 +256,10 @@
       <textarea id="wheelItems" placeholder="one option per line"></textarea>
     </div>
     <div id="wheelResult"></div>
+    <div id="wheelRepRow">
+      <input type="range" id="wheelRep" min="1" max="5" value="1">
+      <span id="wheelRepVal">1&times;</span>
+    </div>
     <div class="actions"><button id="wheelClose">Close</button></div>
   </div>
 </div>
@@ -464,34 +471,42 @@ function tick(){
   requestAnimationFrame(tick);
 }
 
-let wheelRot=0, spinning=false;
+let wheelRot=0, spinning=false, segs=[];
 function wheelList(){ return $("wheelItems").value.split("\n").map(s=>s.trim()).filter(Boolean); }
+function buildSegs(){
+  const rep=+$("wheelRep").value;
+  segs=wheelList().flatMap(v=>Array(rep).fill(v));
+  for(let i=segs.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [segs[i],segs[j]]=[segs[j],segs[i]];
+  }
+}
 function drawWheel(){
-  const items=wheelList(), n=items.length, ctx=$("wheelCv").getContext("2d");
+  const n=segs.length, ctx=$("wheelCv").getContext("2d");
   ctx.clearRect(0,0,260,260);
   if(!n) return;
-  const seg=2*Math.PI/n;
-  items.forEach((it,i)=>{
+  const seg=2*Math.PI/n, small=n>24;
+  segs.forEach((it,i)=>{
     const a0=i*seg-Math.PI/2;
     ctx.beginPath(); ctx.moveTo(130,130); ctx.arc(130,130,128,a0,a0+seg); ctx.closePath();
     ctx.fillStyle=`hsl(${Math.round(i*360/n)},45%,32%)`; ctx.fill();
     ctx.strokeStyle="#000"; ctx.stroke();
     ctx.save(); ctx.translate(130,130); ctx.rotate(a0+seg/2);
-    ctx.fillStyle="#eee"; ctx.font="12px sans-serif"; ctx.textAlign="right";
-    ctx.fillText(it.slice(0,14),120,4); ctx.restore();
+    ctx.fillStyle="#eee"; ctx.font=(small?"9px":"12px")+" sans-serif"; ctx.textAlign="right";
+    ctx.fillText(it.slice(0,small?8:14),120,small?3:4); ctx.restore();
   });
 }
 function rollWheel(){
-  const items=wheelList();
-  if(spinning||!items.length) return;
+  const n=segs.length;
+  if(spinning||!n) return;
   spinning=true; $("wheelResult").textContent="";
-  const seg=360/items.length, w=Math.floor(Math.random()*items.length);
+  const seg=360/n, w=Math.floor(Math.random()*n);
   const target=-(w*seg+seg/2)+(Math.random()-.5)*seg*.7;
   wheelRot+=(6+Math.floor(Math.random()*3))*360+((target-wheelRot)%360+360)%360;
   const cv=$("wheelCv");
   cv.style.transform=`rotate(${wheelRot}deg)`;
   cv.addEventListener("transitionend",()=>{
-    spinning=false; $("wheelResult").textContent=items[w];
+    spinning=false; $("wheelResult").textContent=segs[w];
   },{once:true});
 }
 
@@ -528,11 +543,18 @@ $("pauseBtn").onclick=togglePause; $("tenBtn").onclick=startTen; $("voteBtn").on
 $("fCycle").onclick=fCycle; $("tvBtn").onclick=tvClick;
 $("gear").onclick=openSettings; $("setSave").onclick=saveSettings;
 $("setCancel").onclick=()=>$("settings").classList.remove("show");
-$("wheelBtn").onclick=()=>{ $("wheel").classList.add("show"); drawWheel(); };
+$("wheelBtn").onclick=()=>{ $("wheel").classList.add("show"); buildSegs(); drawWheel(); };
 $("wheelClose").onclick=()=>$("wheel").classList.remove("show");
 $("wheelRoll").onclick=rollWheel;
-$("wheelItems").oninput=()=>{ localStorage.setItem("mt_wheel",$("wheelItems").value); drawWheel(); };
+$("wheelItems").oninput=()=>{ localStorage.setItem("mt_wheel",$("wheelItems").value); buildSegs(); drawWheel(); };
+$("wheelRep").oninput=()=>{
+  $("wheelRepVal").textContent=$("wheelRep").value+"×";
+  localStorage.setItem("mt_wheelrep",$("wheelRep").value);
+  buildSegs(); drawWheel();
+};
 $("wheelItems").value=localStorage.getItem("mt_wheel")||"";
+$("wheelRep").value=localStorage.getItem("mt_wheelrep")||1;
+$("wheelRepVal").textContent=$("wheelRep").value+"×";
 $("gtdBtn").onclick=startGTD;
 document.querySelectorAll('#settings .tab').forEach(tb=>tb.onclick=()=>{
   document.querySelectorAll('#settings .tab').forEach(x=>x.classList.toggle('active',x===tb));
