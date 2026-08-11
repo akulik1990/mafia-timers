@@ -357,12 +357,12 @@ function fCycle(){ // Accusation -> Formal -> Stop (F3 skips accusation)
   else { stopFormal(); return; }
   formalCtl();
 }
-function tvClick(){ // 10 sec -> Vote -> Reset
-  if(ten.running||ten.done||vote.active) toggleVote();
+function tvClick(){ // 10 sec -> Vote -> Reset (F3 skips the 10 sec)
+  if(ten.running||ten.done||vote.active||$("f3toggle").checked) toggleVote();
   else startTen();
   tvCtl();
 }
-function tvCtl(){ $("tvBtn").textContent = vote.active ? "Reset" : (ten.running||ten.done ? "Vote" : "10 sec"); }
+function tvCtl(){ $("tvBtn").textContent = vote.active ? "Reset" : (ten.running||ten.done||$("f3toggle").checked ? "Vote" : "10 sec"); }
 function esc(s){return String(s).replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'})[c]);}
 function updateLabel(){
   if(cfg.layout==="minimal"){
@@ -548,7 +548,7 @@ $("f3toggle").onchange=()=>{
     cfg.formal=$("f3toggle").checked?"3:00":"4:00"; $("fLen").value=cfg.formal; saveCfg();
     if(formal.running) formal.total=parseDur(cfg.formal);
   }
-  formalCtl(); updateLabel();
+  formalCtl(); updateLabel(); tvCtl();
 };
 $("pauseBtn").onclick=togglePause; $("tenBtn").onclick=startTen; $("voteBtn").onclick=toggleVote;
 $("fCycle").onclick=fCycle; $("tvBtn").onclick=tvClick;
