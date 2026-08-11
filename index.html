@@ -321,6 +321,7 @@ function stopDay(){
   day.running=false; $("dayPanel").classList.remove("on");
   $("dayClk").className="clk mono"; $("dayClk").textContent="00:00"; dayCtl();
   formal.running=false; fStage=0; ten.running=false; ten.done=false; vote.active=false; vote.ended=false; gtdActive=false; heldFormal=null;
+  $("fName").value=""; $("fType").selectedIndex=0;
   formalCtl(); $("voteBtn").textContent="Vote"; tvCtl(); updateLabel(); setActionsEnabled();
 }
 function dayCtl(){
