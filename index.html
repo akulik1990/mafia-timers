@@ -67,6 +67,7 @@
   #label .type{color:var(--accent)}
 
   /* ---- MINIMAL STYLE ---- */
+  .gone{display:none}
   body:not(.minimal) .minimal-only{display:none}
   body.minimal .classic-only{display:none}
   body:not(.minimal) #wheelBtn{margin-left:auto}
@@ -211,7 +212,7 @@
     </div>
     <div class="bcol right classic-only">
       <span class="slot" id="slotPauseC"><button class="ctl" id="pauseBtn">Pause</button></span>
-      <div class="brow">
+      <div class="brow" id="slotVoteC">
         <button class="ctl" id="tenBtn">10 sec</button>
         <button class="ctl" id="voteBtn">Vote</button>
       </div>
@@ -363,7 +364,12 @@ function tvClick(){ // 10 sec -> Vote -> Reset (F3 skips the 10 sec)
   else startTen();
   tvCtl();
 }
-function tvCtl(){ $("tvBtn").textContent = vote.active ? "Reset" : (ten.running||ten.done||$("f3toggle").checked ? "Vote" : "10 sec"); }
+function tvCtl(){
+  const label = vote.active ? "Reset" : (ten.running||ten.done||$("f3toggle").checked ? "Vote" : "10 sec");
+  $("tvBtn").textContent = label;
+  // the spare Vote is only worth showing while tvBtn still offers the 10 sec
+  $("voteBtn").classList.toggle("gone", cfg.layout==="minimal" && label!=="10 sec");
+}
 function esc(s){return String(s).replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'})[c]);}
 function updateLabel(){
   if(cfg.layout==="minimal"){
@@ -410,15 +416,15 @@ function applyLayout(){
   if(min){
     $("slotDayM").appendChild($("dayNum")); $("slotLenM").appendChild($("fLen"));
     $("slotTypeM").appendChild($("fType")); $("slotNameM").appendChild($("fName"));
-    $("slotPauseTop").appendChild($("pauseBtn"));
+    $("slotPauseTop").appendChild($("pauseBtn")); $("bottom").appendChild($("voteBtn"));
     $("fName").placeholder="name";
   } else {
     $("slotDayC").appendChild($("dayNum")); $("slotLenC").appendChild($("fLen"));
     $("slotTypeC").insertBefore($("fType"),$("slotTypeC").firstChild); $("slotTypeC").appendChild($("fName"));
-    $("slotPauseC").appendChild($("pauseBtn"));
+    $("slotPauseC").appendChild($("pauseBtn")); $("slotVoteC").appendChild($("voteBtn"));
     $("fName").placeholder="on (name)";
   }
-  updateLabel();
+  tvCtl(); updateLabel();
 }
 
 function togglePause(){
