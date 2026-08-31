@@ -572,6 +572,13 @@ function openSettings(){
   $("setWarn").value=cfg.warn; $("setDanger").value=cfg.danger; $("setDir").value=cfg.formalDir;
   $("setFont").value=cfg.font; $("setDayWarn").value=cfg.dayWarn; $("setDayDanger").value=cfg.dayDanger; $("setSize").value=cfg.size; $("setF3min").value=cfg.f3min?"on":"off"; $("setGtd").value=cfg.gtdMin; $("setStyle").value=cfg.layout; $("setHide").value=cfg.barHide?"on":"off"; $("setTheme").value=cfg.theme; $("setBg").value=cfg.bg;
   $("settings").classList.add("show");
+  sizeSettings();
+}
+function sizeSettings(){
+  const card=document.querySelector("#settings .card");
+  card.style.transform="";
+  const s=Math.min(innerWidth*.94/card.offsetWidth, innerHeight*.94/card.offsetHeight);
+  card.style.transform=`scale(${s})`;
 }
 function saveSettings(){
   cfg.dayMin=+$("setDay").value||18;
@@ -608,7 +615,10 @@ $("fCycle").onclick=fCycle; $("tvBtn").onclick=tvClick;
 $("gear").onclick=openSettings; $("setSave").onclick=saveSettings;
 $("setCancel").onclick=()=>$("settings").classList.remove("show");
 $("wheelBtn").onclick=()=>{ $("wheel").classList.add("show"); buildSegs(); sizeWheel(); };
-addEventListener("resize",()=>{ if($("wheel").classList.contains("show")) sizeWheel(); });
+addEventListener("resize",()=>{
+  if($("wheel").classList.contains("show")) sizeWheel();
+  if($("settings").classList.contains("show")) sizeSettings();
+});
 $("wheelClose").onclick=()=>$("wheel").classList.remove("show");
 $("wheelRoll").onclick=rollWheel;
 $("wheelItems").oninput=()=>{ localStorage.setItem("mt_wheel",$("wheelItems").value); buildSegs(); drawWheel(); };
@@ -635,6 +645,7 @@ $("gtdBtn").onclick=startGTD;
 document.querySelectorAll('#settings .tab').forEach(tb=>tb.onclick=()=>{
   document.querySelectorAll('#settings .tab').forEach(x=>x.classList.toggle('active',x===tb));
   document.querySelectorAll('#settings .tabpane').forEach(p=>p.hidden=p.id!=='tab-'+tb.dataset.tab);
+  sizeSettings();
 });
 document.addEventListener("keydown",e=>{
   if(e.target.tagName==="INPUT"||e.target.tagName==="SELECT"||e.target.tagName==="TEXTAREA") return;
