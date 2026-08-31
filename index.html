@@ -157,29 +157,34 @@
   #settings .actions,#wheel .actions{display:flex;justify-content:flex-end;gap:10px;margin-top:14px}
   #settings .actions button,#wheel .actions button{background:var(--panel2);padding:8px 18px;width:auto;
     font:inherit;font-size:13px;color:var(--ink);border:1px solid var(--line);border-radius:7px;cursor:pointer}
-  #wheelWrap{position:relative;width:260px;height:260px;flex:none}
-  #wheelCv{transition:transform 7.5s cubic-bezier(.1,.55,.06,.995)}
+  #wheel .card{width:1120px;height:560px;max-width:none;flex:none;display:flex;flex-direction:column}
+  #wheel h2{font-size:28px;margin-bottom:8px}
+  #wheel .actions{margin-top:8px}
+  #wheel .actions button{font-size:20px;padding:8px 24px}
+  #wheelRow{display:flex;gap:18px;flex:1;min-height:0}
+  #wheelWrap{position:relative;flex:none;align-self:center;width:370px;height:370px}
+  #wheelCv{width:370px;height:370px;transition:transform 7.5s cubic-bezier(.1,.55,.06,.995)}
   #wheelPtr{position:absolute;top:-4px;left:50%;transform:translateX(-50%);width:0;height:0;
-    border-left:9px solid transparent;border-right:9px solid transparent;border-top:14px solid var(--danger);z-index:2}
-  #wheelRoll{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:64px;height:64px;
-    border-radius:50%;border:2px solid var(--line);background:var(--panel2);color:var(--ink);font:inherit;cursor:pointer;z-index:2}
+    border-left:10px solid transparent;border-right:10px solid transparent;border-top:16px solid var(--danger);z-index:2}
+  #wheelRoll{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:24%;height:24%;
+    border-radius:50%;border:2px solid var(--line);background:var(--panel2);color:var(--ink);font:inherit;font-size:20px;cursor:pointer;z-index:2}
   #wheelRoll:hover{background:var(--hover)}
-  #wheelItems{flex:1;height:260px;background:var(--panel2);border:1px solid var(--line);border-radius:7px;
-    color:var(--ink);font:inherit;font-size:13px;padding:6px 9px;resize:none}
-  #wheelResult{margin-top:10px;font-size:16px;font-weight:700;min-height:20px;text-align:center}
-  #wheelRepRow{display:flex;align-items:center;gap:10px;margin-top:8px}
-  #wheelRepRow input{flex:1;padding:0;background:transparent;border:0;accent-color:var(--accent);cursor:pointer}
-  #wheelRepVal{color:var(--dim);font-size:13px;min-width:24px}
-  #wheelModeLbl{float:right;display:inline-flex;align-items:center;gap:5px;
-    font-size:12.5px;font-weight:400;color:var(--dim);cursor:pointer}
-  #wheelModeLbl input{accent-color:var(--accent);cursor:pointer}
-  #wheelInstant{display:none;width:260px;height:260px;flex:none;align-items:center;justify-content:center}
-  #instRoll{width:90px;height:90px;border-radius:50%;border:2px solid var(--line);
-    background:var(--panel2);color:var(--ink);font:inherit;font-size:16px;cursor:pointer}
+  #wheelItems{flex:1;min-width:0;background:var(--panel2);border:1px solid var(--line);border-radius:7px;
+    color:var(--ink);font:inherit;font-size:26px;line-height:1.25;padding:8px 14px;resize:none}
+  #wheelResult{margin-top:6px;font-size:52px;font-weight:700;min-height:60px;text-align:center}
+  #wheelRepRow{display:flex;align-items:center;gap:10px;margin-top:4px}
+  #wheelRepRow input{flex:1;padding:0;background:transparent;border:0;accent-color:var(--accent);cursor:pointer;height:24px}
+  #wheelRepVal{color:var(--dim);font-size:19px;min-width:40px}
+  #wheelModeLbl{float:right;display:inline-flex;align-items:center;gap:8px;
+    font-size:19px;font-weight:400;color:var(--dim);cursor:pointer}
+  #wheelModeLbl input{accent-color:var(--accent);cursor:pointer;width:19px;height:19px}
+  #wheelInstant{display:none;flex:1;align-items:center;justify-content:center}
+  #instRoll{width:170px;height:170px;border-radius:50%;border:2px solid var(--line);
+    background:var(--panel2);color:var(--ink);font:inherit;font-size:26px;cursor:pointer}
   #instRoll:hover{background:var(--hover)}
   #wheel.instant #wheelWrap,#wheel.instant #wheelRepRow{display:none}
   #wheel.instant #wheelInstant{display:flex}
-  #wheel.instant #wheelResult{font-size:26px}
+  #wheel.instant #wheelResult{font-size:64px}
   #settings .actions #setSave{background:var(--ok);border-color:#3a9a28}
 </style>
 </head>
@@ -280,10 +285,10 @@
 <div id="wheel">
   <div class="card">
     <h2>Wheel <label id="wheelModeLbl"><input type="checkbox" id="wheelMode"> instant result</label></h2>
-    <div style="display:flex;gap:16px">
+    <div id="wheelRow">
       <div id="wheelWrap">
         <div id="wheelPtr"></div>
-        <canvas id="wheelCv" width="260" height="260"></canvas>
+        <canvas id="wheelCv" width="740" height="740"></canvas>
         <button id="wheelRoll">Roll</button>
       </div>
       <div id="wheelInstant"><button id="instRoll">Roll</button></div>
@@ -526,19 +531,26 @@ function buildSegs(){
     [segs[i],segs[j]]=[segs[j],segs[i]];
   }
 }
+function sizeWheel(){
+  const s=Math.min(innerWidth*.96/1120, innerHeight*.94/560);
+  document.querySelector("#wheel .card").style.transform=`scale(${s})`;
+  drawWheel();
+}
 function drawWheel(){
-  const n=segs.length, ctx=$("wheelCv").getContext("2d");
-  ctx.clearRect(0,0,260,260);
+  const cv=$("wheelCv"), w=cv.width, c=w/2;
+  const n=segs.length, ctx=cv.getContext("2d");
+  ctx.clearRect(0,0,w,w);
   if(!n) return;
   const seg=2*Math.PI/n, small=n>24, base=wheelList();
+  const fs=Math.max(11,Math.round(w*(small?.055:.078)));
   segs.forEach((it,i)=>{
     const a0=i*seg-Math.PI/2;
-    ctx.beginPath(); ctx.moveTo(130,130); ctx.arc(130,130,128,a0,a0+seg); ctx.closePath();
-    ctx.fillStyle=`hsl(${Math.round(base.indexOf(it)*360/base.length)},45%,32%)`; ctx.fill();
+    ctx.beginPath(); ctx.moveTo(c,c); ctx.arc(c,c,c-2,a0,a0+seg); ctx.closePath();
+    ctx.fillStyle=`hsl(${Math.round(base.indexOf(it)*360/base.length)},50%,36%)`; ctx.fill();
     ctx.strokeStyle="#000"; ctx.stroke();
-    ctx.save(); ctx.translate(130,130); ctx.rotate(a0+seg/2);
-    ctx.fillStyle="#eee"; ctx.font=(small?"9px":"12px")+" sans-serif"; ctx.textAlign="right";
-    ctx.fillText(it.slice(0,small?8:14),120,small?3:4); ctx.restore();
+    ctx.save(); ctx.translate(c,c); ctx.rotate(a0+seg/2);
+    ctx.fillStyle="#fff"; ctx.font="700 "+fs+"px sans-serif"; ctx.textAlign="right";
+    ctx.fillText(it.slice(0,small?8:14),c-10,Math.round(fs*.35)); ctx.restore();
   });
 }
 function rollWheel(){
@@ -584,11 +596,19 @@ $("f3toggle").onchange=()=>{
   }
   formalCtl(); updateLabel(); tvCtl();
 };
+[$("fType"),$("fLen")].forEach(el=>{
+  el.addEventListener("mousedown",e=>{
+    e.preventDefault();
+    el.selectedIndex=(el.selectedIndex+1)%el.options.length;
+    el.dispatchEvent(new Event("change"));
+  });
+});
 $("pauseBtn").onclick=togglePause; $("tenBtn").onclick=startTen; $("voteBtn").onclick=toggleVote;
 $("fCycle").onclick=fCycle; $("tvBtn").onclick=tvClick;
 $("gear").onclick=openSettings; $("setSave").onclick=saveSettings;
 $("setCancel").onclick=()=>$("settings").classList.remove("show");
-$("wheelBtn").onclick=()=>{ $("wheel").classList.add("show"); buildSegs(); drawWheel(); };
+$("wheelBtn").onclick=()=>{ $("wheel").classList.add("show"); buildSegs(); sizeWheel(); };
+addEventListener("resize",()=>{ if($("wheel").classList.contains("show")) sizeWheel(); });
 $("wheelClose").onclick=()=>$("wheel").classList.remove("show");
 $("wheelRoll").onclick=rollWheel;
 $("wheelItems").oninput=()=>{ localStorage.setItem("mt_wheel",$("wheelItems").value); buildSegs(); drawWheel(); };
