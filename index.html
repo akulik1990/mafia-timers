@@ -345,12 +345,17 @@ const ten    = {endAt:0, remain:0, running:false, done:false};
 const vote   = {startAt:0, pausedElapsed:0, active:false, ended:false};
 
 function toggleDay(){ day.running ? stopDay() : startDay(); }
+function clearPause(){
+  paused=false; document.body.classList.remove("paused"); $("pauseBtn").textContent="Pause";
+}
 function startDay(){
   const total=(parseInt($("dayMin").value,10)||0)*60; if(total<=0) return;
+  clearPause();
   day.endAt=now()+total*1000; day.running=true; gtdActive=false; heldFormal=null;
   $("dayPanel").classList.add("on"); dayCtl(); setActionsEnabled(); updateLabel();
 }
 function stopDay(){
+  clearPause();
   day.running=false; $("dayPanel").classList.remove("on");
   $("dayClk").className="clk mono"; $("dayClk").textContent="00:00"; dayCtl();
   formal.running=false; fStage=0; ten.running=false; ten.done=false; vote.active=false; vote.ended=false; gtdActive=false; heldFormal=null;
