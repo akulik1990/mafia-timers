@@ -396,13 +396,13 @@ function fCycle(){ // Accusation -> Formal -> Stop (F3 skips accusation)
   else { stopFormal(); return; }
   formalCtl();
 }
-function tvClick(){ // 10 sec -> Vote -> Reset (F3 skips the 10 sec)
-  if(ten.running||ten.done||vote.active||$("f3toggle").checked) toggleVote();
+function tvClick(){ // 10 sec -> Vote -> Reset
+  if(ten.running||ten.done||vote.active) toggleVote();
   else startTen();
   tvCtl();
 }
 function tvCtl(){
-  const label = vote.active ? "Reset" : (ten.running||ten.done||$("f3toggle").checked ? "Vote" : "10 sec");
+  const label = vote.active ? "Reset" : (ten.running||ten.done ? "Vote" : "10 sec");
   $("tvBtn").textContent = label;
   // the spare Vote is only worth showing while tvBtn still offers the 10 sec
   $("voteBtn").classList.toggle("gone", cfg.layout==="minimal" && label!=="10 sec");
