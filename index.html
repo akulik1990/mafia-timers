@@ -59,7 +59,7 @@
     line-height:1;padding:1.3px}
   #gear:hover,#wheelBtn:hover{color:var(--ink)}
 
-  #clocks{flex:1;display:grid;grid-template-columns:1fr 1fr;min-height:0;
+  #clocks{position:relative;flex:1;display:grid;grid-template-columns:1fr 1fr;min-height:0;
     border:1.3px solid var(--line);border-radius:5.3px;overflow:hidden;background:var(--panel)}
   .panel{position:relative;display:flex;flex-direction:column;align-items:center;
     justify-content:flex-start;transition:background .2s}
@@ -70,6 +70,11 @@
   .panel .clk{flex:1;display:flex;align-items:center;justify-content:center;
     font-family:var(--clockfont),ui-monospace,monospace;font-size:61.6px;line-height:.85;font-weight:700}
   .clk.warn{color:var(--warn)} .clk.danger{color:var(--orange)} .clk.negative{color:var(--danger)}
+  #flash{position:absolute;inset:0;z-index:3;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+    background:var(--panel);opacity:0;pointer-events:none;transition:opacity .25s;cursor:pointer}
+  #flash.show{opacity:1;pointer-events:auto}
+  #flash b{font-size:48px;letter-spacing:.12em;color:var(--warn)} #flash.end b{color:var(--danger)}
+  #flash small{font-size:14.6px;font-weight:700;letter-spacing:.18em;color:var(--dim);text-transform:uppercase}
   body.paused .panel.on{background:#0c1c1a}
   body.paused .clk{color:var(--paused)!important}
 
@@ -196,12 +201,14 @@
       <input class="num" id="dayMin" type="number" min="1" value="18">
       <button class="ctl" id="dayToggle">Start</button>
     </div>
-    <button class="ctl" id="gtdBtn">GTD</button>
+    <button class="ctl" id="rngBtn" title="GTD with Auto RNG on">GTD + RNG</button>
+    <button class="ctl" id="gtdBtn" title="2 min, Auto RNG off">GTD</button>
     <div class="cg classic-only">
       <span class="cl">Day&nbsp;#</span>
       <span class="slot" id="slotDayC"><input class="num" id="dayNum" type="number" min="1" value="1"></span>
     </div>
     <label class="f3lbl"><input type="checkbox" id="f3toggle"> F3</label>
+    <label class="f3lbl" title="Reset goes on to GTD / RNG once the clock is out"><input type="checkbox" id="autoToggle"> Auto RNG</label>
     <div class="cg classic-only">
       <span class="cl">Formal&nbsp;min</span>
       <span class="slot" id="slotLenC"><select id="fLen"><option value="2:00">2</option><option value="3:00">3</option><option value="4:00" selected>4</option><option value="5:00">5</option></select></span>
@@ -214,7 +221,7 @@
   <div id="mid">
     <div id="clocks">
       <div class="panel day" id="dayPanel">
-        <div class="lab">DAY</div>
+        <div class="lab" id="dayLab">DAY</div>
         <div class="clk mono" id="dayClk">30:00</div>
       </div>
       <div class="panel side" id="side">
@@ -223,6 +230,7 @@
         <div id="voteWrap"><div class="bar"><div class="fill" id="voteFill"></div></div><div id="voteCount" class="mono">0.000</div></div>
         <div id="voteMini" class="mono"></div>
       </div>
+      <div id="flash"><b></b><small></small></div>
     </div>
     <div id="label"><span id="lblCtx" class="classic-only"></span><span id="lblFormal" class="classic-only"></span><span class="mingroup minimal-only"><span class="ctx" id="ctxPrefix">D</span><span class="slot" id="slotDayM"></span><span class="ctx">&nbsp;---&nbsp;</span><span class="slot" id="slotLenM"></span><span class="ctx">&nbsp;min formals&nbsp;:&nbsp;</span><span class="slot" id="slotTypeM"></span><span class="ctx">&nbsp;on&nbsp;</span><span class="slot" id="slotNameM"></span></span></div>
   </div>
@@ -244,6 +252,7 @@
     </div>
     <button class="ctl minimal-only" id="fCycle">Accusation</button>
     <button class="ctl minimal-only" id="tvBtn">10 sec</button>
+    <button class="ctl gone" id="endBtn" title="The vote went through">End Day</button>
   </div>
 
 </div>
@@ -307,7 +316,7 @@
 "use strict";
 const $ = id => document.getElementById(id);
 
-const DEF = {dayMin:18, formal:"4:00", vote:3, warn:60, danger:20, formalDir:"up", font:"mono", dayWarn:120, dayDanger:30, size:"fixed", f3min:true, gtdMin:2, layout:"minimal", barHide:true, theme:"classic", bg:"black"};
+const DEF = {dayMin:18, formal:"4:00", vote:3, warn:60, danger:20, formalDir:"up", font:"mono", dayWarn:120, dayDanger:30, size:"fixed", f3min:true, gtdMin:2, auto:false, layout:"minimal", barHide:true, theme:"classic", bg:"black"};
 let cfg = Object.assign({}, DEF, JSON.parse(localStorage.getItem("mt_cfg")||"{}"));
 const saveCfg = () => localStorage.setItem("mt_cfg", JSON.stringify(cfg));
 const FONTS = {digital7:"'Digital7'", dsegModern:"'DSEG7Modern'", dsegClassic:"'DSEG7Classic'", mono:"ui-monospace"};
@@ -338,8 +347,11 @@ const fmt = sec => {
 };
 const now = () => Date.now();
 
-let paused=false, gtdActive=false, heldFormal=null, fStage=0; // 0 idle, 1 accusation, 2 formal
-const day    = {endAt:0, remain:0, running:false};
+let paused=false, heldFormal=null, fStage=0; // 0 idle, 1 accusation, 2 formal
+const PHASES=["DAY","GTD","RNG 1","RNG 2"];
+let phase=0, rolls=[]; // rolled at day start
+const pick = a => a[Math.floor(Math.random()*a.length)];
+const day    = {endAt:0, remain:0, running:false, held:null};
 const formal = {startAt:0, pausedElapsed:0, total:0, running:false};
 const ten    = {endAt:0, remain:0, running:false, done:false};
 const vote   = {startAt:0, pausedElapsed:0, active:false, ended:false};
@@ -351,14 +363,16 @@ function clearPause(){
 function startDay(){
   const total=(parseInt($("dayMin").value,10)||0)*60; if(total<=0) return;
   clearPause();
-  day.endAt=now()+total*1000; day.running=true; gtdActive=false; heldFormal=null;
+  day.endAt=now()+total*1000; day.running=true; day.held=null; heldFormal=null;
+  phase=0; rolls=[pick([1,1,0]), pick([1,0])]; $("dayLab").textContent="DAY";
   $("dayPanel").classList.add("on"); dayCtl(); setActionsEnabled(); updateLabel();
 }
 function stopDay(){
   clearPause();
   day.running=false; $("dayPanel").classList.remove("on");
   $("dayClk").className="clk mono"; $("dayClk").textContent="00:00"; dayCtl();
-  formal.running=false; fStage=0; ten.running=false; ten.done=false; vote.active=false; vote.ended=false; gtdActive=false; heldFormal=null;
+  formal.running=false; fStage=0; ten.running=false; ten.done=false; vote.active=false; vote.ended=false; heldFormal=null;
+  phase=0; $("dayLab").textContent="DAY";
   $("fName").value=""; $("fType").selectedIndex=0;
   formalCtl(); $("voteBtn").textContent="Vote"; tvCtl(); updateLabel(); setActionsEnabled();
 }
@@ -367,15 +381,40 @@ function dayCtl(){
   $("dayMin").style.display=on?"none":""; $("dayMin").previousElementSibling.style.opacity=on?.4:1;
   $("dayToggle").textContent=on?"Stop":"Start"; $("dayToggle").classList.toggle("on",on);
 }
-function startGTD(){ $("dayMin").value=cfg.gtdMin; startDay(); $("dayMin").value=cfg.dayMin; gtdActive=true; updateLabel(); }
+function startGTD(){ setAuto(false); if(!day.running) startDay(); setPhase(1); }
+function startGtdRng(){ setAuto(true); if(!day.running) startDay(); setPhase(1); }
+function setAuto(on){ $("autoToggle").checked=on; cfg.auto=on; saveCfg(); tvCtl(); }
+function setPhase(p){
+  phase=p; day.endAt=now()+cfg.gtdMin*60000; day.remain=cfg.gtdMin*60000; day.held=null;
+  $("dayLab").textContent=PHASES[p]; $("fType").value=PHASES[p]; updateLabel();
+  flash(PHASES[p], p===1 ? cfg.gtdMin+" min" : "rolled 1");
+}
+function nextPhase(){ // Day -> GTD -> RNG 1 -> RNG 2, a 0 ends the day
+  const next = phase===0 ? 1 : (rolls[phase-1] ? phase+1 : 0);
+  if(next) return setPhase(next);
+  endDay(phase<3 ? PHASES[phase+1]+" rolled 0" : "");
+}
+function flash(big, small, end=false){
+  const f=$("flash");
+  f.querySelector("b").textContent=big; f.querySelector("small").textContent=small;
+  f.classList.toggle("end",end); f.classList.add("show");
+  clearTimeout(flash.t); flash.t=setTimeout(()=>f.classList.remove("show"),3000);
+}
+function endDay(why=""){ stopDay(); $("dayNum").value=(+$("dayNum").value||0)+1; updateLabel(); flash("DAY OVER", why, true); }
+const dayLeft = () => day.held ?? (paused ? day.remain : day.endAt-now());
+// in GTD / RNG they get one formal, so its vote moves on whatever the clock says
+const autoNext = () => $("autoToggle").checked && !$("f3toggle").checked && day.running && (phase ? day.held!=null : dayLeft()<=0);
+// players see the button, so it never gives the roll away
+const resetLabel = () => !autoNext() ? "Reset" : (phase===0 ? "GTD" : phase===3 ? "End Day" : "Roll RNG");
 function setActionsEnabled(){
   const on = day.running && !paused;
-  ["fType","fName","fToggle","tenBtn","voteBtn","fCycle","tvBtn"].forEach(id=>$(id).disabled=!on);
+  ["fType","fName","fToggle","tenBtn","voteBtn","fCycle","tvBtn","endBtn"].forEach(id=>$(id).disabled=!on);
 }
 
 function toggleFormal(){ formal.running ? stopFormal() : startFormal(); }
 function startFormal(){
-  ten.running=false; ten.done=false; vote.active=false; vote.ended=false; gtdActive=false; heldFormal=null; $("voteBtn").textContent="Vote";
+  if(phase && $("autoToggle").checked && day.held==null) day.held=dayLeft(); // the phase clock stops at the accusation
+  ten.running=false; ten.done=false; vote.active=false; vote.ended=false; heldFormal=null; $("voteBtn").textContent="Vote";
   formal.total=parseDur(cfg.formal);
   formal.startAt=now(); formal.running=true;
   formalCtl(); tvCtl(); updateLabel();
@@ -402,10 +441,11 @@ function tvClick(){ // 10 sec -> Vote -> Reset
   tvCtl();
 }
 function tvCtl(){
-  const label = vote.active ? "Reset" : (ten.running||ten.done ? "Vote" : "10 sec");
+  const label = vote.active ? resetLabel() : (ten.running||ten.done ? "Vote" : "10 sec");
   $("tvBtn").textContent = label;
   // the spare Vote is only worth showing while tvBtn still offers the 10 sec
   $("voteBtn").classList.toggle("gone", cfg.layout==="minimal" && label!=="10 sec");
+  $("endBtn").classList.toggle("gone", !vote.active);
 }
 function esc(s){return String(s).replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'})[c]);}
 function updateLabel(){
@@ -425,8 +465,8 @@ function updateLabel(){
     $("lblFormal").innerHTML = fF(t, $("fName").value.trim());
   } else if(heldFormal){
     $("lblFormal").innerHTML = fF(heldFormal.type, heldFormal.name);
-  } else if(gtdActive){
-    $("lblFormal").innerHTML = ` : <span class="type">${esc(t)} Time</span>`;
+  } else if(phase){
+    $("lblFormal").innerHTML = ` : <span class="type">${esc(PHASES[phase])} Time</span>`;
   } else $("lblFormal").innerHTML = "";
 }
 
@@ -439,11 +479,16 @@ function startTen(){
 }
 
 function toggleVote(){
-  if(vote.active){ vote.active=false; vote.ended=false; $("voteFill").style.width="0"; $("voteBtn").textContent="Vote"; tvCtl(); return; }
+  if(vote.active){
+    const go=autoNext();
+    vote.active=false; vote.ended=false; $("voteFill").style.width="0"; $("voteBtn").textContent="Vote"; tvCtl();
+    if(go) nextPhase();
+    return;
+  }
   ten.running=false; ten.done=false;
   if(formal.running) heldFormal={type:$("fType").value,name:$("fName").value.trim()};
   formal.running=false; fStage=0; formalCtl(); updateLabel();
-  vote.active=true; vote.ended=false; vote.startAt=now(); $("voteBtn").textContent="Reset";
+  vote.active=true; vote.ended=false; vote.startAt=now(); $("voteBtn").textContent=resetLabel();
   tvCtl();
 }
 
@@ -453,12 +498,12 @@ function applyLayout(){
   if(min){
     $("slotDayM").appendChild($("dayNum")); $("slotLenM").appendChild($("fLen"));
     $("slotTypeM").appendChild($("fType")); $("slotNameM").appendChild($("fName"));
-    $("slotPauseTop").appendChild($("pauseBtn")); $("bottom").appendChild($("voteBtn"));
+    $("slotPauseTop").appendChild($("pauseBtn")); $("bottom").appendChild($("voteBtn")); $("bottom").insertBefore($("endBtn"),$("tvBtn"));
     $("fName").placeholder="name";
   } else {
     $("slotDayC").appendChild($("dayNum")); $("slotLenC").appendChild($("fLen"));
     $("slotTypeC").insertBefore($("fType"),$("slotTypeC").firstChild); $("slotTypeC").appendChild($("fName"));
-    $("slotPauseC").appendChild($("pauseBtn")); $("slotVoteC").appendChild($("voteBtn"));
+    $("slotPauseC").appendChild($("pauseBtn")); $("slotVoteC").appendChild($("voteBtn")); $("slotVoteC").insertBefore($("endBtn"),$("voteBtn"));
     $("fName").placeholder="on (name)";
   }
   tvCtl(); updateLabel();
@@ -484,7 +529,7 @@ function togglePause(){
 function tick(){
   const t=now();
   if(day.running){
-    const rem = paused?day.remain/1000:(day.endAt-t)/1000;
+    const rem = dayLeft()/1000;
     const c=$("dayClk");
     c.className="clk mono"+(rem<0?" negative":(rem<=cfg.dayDanger?" danger":(rem<=cfg.dayWarn?" warn":"")));
     c.textContent=fmt(rem);
@@ -500,6 +545,8 @@ function tick(){
     $("voteCount").textContent = Math.min(el,cfg.vote).toFixed(3);
     if(over){ $("voteMini").style.display="block"; $("voteMini").textContent=Math.min(el,5).toFixed(3); }
     if(over && !vote.ended) vote.ended=true;
+    const r=resetLabel();
+    if($("voteBtn").textContent!==r){ $("voteBtn").textContent=r; tvCtl(); }
   } else if(ten.running || ten.done){
     side.className="panel side mode-ten"; lab.textContent="10 SEC";
     if(ten.running){
@@ -646,7 +693,10 @@ $("wheelRep").value=localStorage.getItem("mt_wheelrep")||1;
 $("wheelRepVal").textContent=$("wheelRep").value+"×";
 $("wheelMode").checked=!!localStorage.getItem("mt_wheelmode");
 $("wheel").classList.toggle("instant",$("wheelMode").checked);
-$("gtdBtn").onclick=startGTD;
+$("flash").onclick=()=>$("flash").classList.remove("show");
+$("gtdBtn").onclick=startGTD; $("endBtn").onclick=()=>endDay(); $("rngBtn").onclick=startGtdRng;
+$("autoToggle").checked=cfg.auto;
+$("autoToggle").onchange=()=>setAuto($("autoToggle").checked);
 document.querySelectorAll('#settings .tab').forEach(tb=>tb.onclick=()=>{
   document.querySelectorAll('#settings .tab').forEach(x=>x.classList.toggle('active',x===tb));
   document.querySelectorAll('#settings .tabpane').forEach(p=>p.hidden=p.id!=='tab-'+tb.dataset.tab);
